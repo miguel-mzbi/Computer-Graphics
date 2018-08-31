@@ -17,10 +17,11 @@ const char *samples[12] = {
 };
 
 static void buildEvalMatrix();
-static void deleteEvalMatrix();
-static void flushAndSwap();
+static void deleteEvalMatrix(int);
+static void updateAndClean();
 static void clear();
 static void getPointsAll();
 static void drawPointsAll();
 static void drawLinesAll();
 static void drawAxis();
+static void getTwoPoints();
