@@ -16,12 +16,15 @@ const char *samples[12] = {
 	"(x^2+y^2)^3-4*x^2*y^2",				// Clover Leaf
 };
 
+static void drawAxis();
+static bool differentVertexPoly(double *);
+static bool differentVertexSegment(double *, double, double);
+static bool findIntersection();
 static void buildEvalMatrix();
 static void deleteEvalMatrix(int);
 static void updateAndClean();
 static void clear();
 static void getPointsAll();
 static void drawPointsAll();
+static double getLineCoordBox(double, double);
 static void drawLinesAll();
-static void drawAxis();
-static void getTwoPoints();
