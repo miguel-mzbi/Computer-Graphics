@@ -25,10 +25,9 @@ static void buildEvalMatrix();
 static void deleteEvalMatrix(int);
 
 static void getVertexA(double x, double y, std::vector<double> &);
-static bool differentVertexPoly(std::vector<double> &);
+static bool differentVertex(std::vector<double> &);
 static void drawBoxLines(std::vector<double> &);
-static bool differentVertexSegment(std::vector<double> &, double, double);
-static bool findIntersection();
+static void findIntersection();
 static void findBoxes(std::vector<double> &);
 
 static void getPointsAll();
