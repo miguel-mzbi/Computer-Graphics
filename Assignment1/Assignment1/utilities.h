@@ -24,14 +24,14 @@ static void refresh();
 static void buildEvalMatrix();
 static void deleteEvalMatrix(int);
 
-static void getVertexA(double x, double y, std::vector<double> &);
-static bool differentVertex(std::vector<double> &);
-static void drawBoxLines(std::vector<double> &);
-static void drawLetter(double, double);
+static void getVertexA(float x, float y, std::vector<float> &);
+static bool differentVertex(std::vector<float> &);
+static void drawBoxLines(std::vector<float> &);
+static void drawLetter(float, float);
 static void findIntersection();
-static void findBoxes(std::vector<double> &);
+static void findBoxes(std::vector<float> &);
 
 static void getPointsAll();
 static void drawPointsAll();
-static double getLineCoordBox(double, double);
+static float getLineCoordBox(float, float);
 static void drawLinesAll();
