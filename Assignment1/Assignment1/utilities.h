@@ -19,13 +19,17 @@ const char *samples[12] = {
 static void updateAndClean();
 static void clear();
 static void drawAxis();
+static void refresh();
 
 static void buildEvalMatrix();
 static void deleteEvalMatrix(int);
 
-static bool differentVertexPoly(double *);
-static bool differentVertexSegment(double *, double, double);
+static void getVertexA(double x, double y, std::vector<double> &);
+static bool differentVertexPoly(std::vector<double> &);
+static void drawBoxLines(std::vector<double> &);
+static bool differentVertexSegment(std::vector<double> &, double, double);
 static bool findIntersection();
+static void findBoxes(std::vector<double> &);
 
 static void getPointsAll();
 static void drawPointsAll();
