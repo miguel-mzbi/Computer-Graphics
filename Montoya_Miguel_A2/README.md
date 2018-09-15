@@ -1,4 +1,4 @@
-# Assignment 2"
+# Assignment 2
 
 Miguel Montoya (montoya5@purdue.edu)
 
