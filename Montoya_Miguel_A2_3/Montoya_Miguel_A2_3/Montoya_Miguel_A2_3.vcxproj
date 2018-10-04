@@ -120,6 +120,9 @@
   <ItemGroup>
     <ClInclude Include="functions.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="p1.poly" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

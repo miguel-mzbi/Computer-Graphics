@@ -2,7 +2,13 @@
 //
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <iterator>
 #include <vector>
+#include <string>
+
+#include <windows.h>
 #include <math.h>
 #include "GL/freeglut.h"
 #include "functions.h"
@@ -35,6 +41,11 @@ static int leftMouseActive = NONE; // If true, mouse movement is active. Depends
 
 static vector<float> initialPoint(2); // Stores point P
 static vector<float> currentPoint(2); // Stores point P' when moving mouse
+
+// Polygons
+static bool drawPoly = false;
+static vector<vector<float>> verticesDraw;
+static vector<vector<int>> polygonDraw;
 
 // Field of view
 static float currentFOV = 30;
@@ -116,7 +127,7 @@ static void displayTea() {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(currentFOV - deltaFOV, 1, -1.0, 1.0);
-	glTranslatef(0, 0, -2);
+	glTranslatef(0, 0, -3);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -182,10 +193,25 @@ static void displayTea() {
 		glRotatef(currentAngle, axisRotation[0], axisRotation[1], axisRotation[2]);
 	}
 
+	glColor3f(1.0, 1.0, 1.0);
 	if (drawTeapot) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		// Draw white teapot
-		glColor3f(1.0, 1.0, 1.0);
 		glutSolidTeapot(teaSize);
+	}
+	if (drawPoly) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		// Draw polygon from file
+		// Iterate trough each face
+		for (unsigned int i = 0; i < polygonDraw.size(); i++) {
+			glBegin(GL_POLYGON);
+			// Iterate all vertices
+			for (unsigned int j = 0; j < polygonDraw[i].size(); j++) {
+				int vertex = polygonDraw[i][j];
+				glVertex3f(verticesDraw[vertex][0], verticesDraw[vertex][1], verticesDraw[vertex][2]);
+			}
+			glEnd();
+		}
 	}
 	draw();
 }
@@ -273,6 +299,108 @@ static float computeAngleGlobal() {
 	}
 	else {
 		return -(abs(currentDistanceAxis - distToAxis) * 360 / 2);
+	}
+}
+
+static void openDialog() {
+	char filename[MAX_PATH];
+
+	OPENFILENAME ofn;
+	ZeroMemory(&filename, sizeof(filename));
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = NULL;
+	ofn.lpstrFilter = "Poly Files\0*.poly\0Any File\0*.*\0";
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.lpstrTitle = "Select a Poly File";
+	ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
+
+	if (GetOpenFileNameA(&ofn)) {
+		parsePoly(filename);
+	}
+	else {
+		switch (CommDlgExtendedError()) {
+			case CDERR_DIALOGFAILURE: cout << "CDERR_DIALOGFAILURE\n";   break;
+			case CDERR_FINDRESFAILURE: cout << "CDERR_FINDRESFAILURE\n";  break;
+			case CDERR_INITIALIZATION: cout << "CDERR_INITIALIZATION\n";  break;
+			case CDERR_LOADRESFAILURE: cout << "CDERR_LOADRESFAILURE\n";  break;
+			case CDERR_LOADSTRFAILURE: cout << "CDERR_LOADSTRFAILURE\n";  break;
+			case CDERR_LOCKRESFAILURE: cout << "CDERR_LOCKRESFAILURE\n";  break;
+			case CDERR_MEMALLOCFAILURE: cout << "CDERR_MEMALLOCFAILURE\n"; break;
+			case CDERR_MEMLOCKFAILURE: cout << "CDERR_MEMLOCKFAILURE\n";  break;
+			case CDERR_NOHINSTANCE: cout << "CDERR_NOHINSTANCE\n";     break;
+			case CDERR_NOHOOK: cout << "CDERR_NOHOOK\n";          break;
+			case CDERR_NOTEMPLATE: cout << "CDERR_NOTEMPLATE\n";      break;
+			case CDERR_STRUCTSIZE: cout << "CDERR_STRUCTSIZE\n";      break;
+			case FNERR_BUFFERTOOSMALL: cout << "FNERR_BUFFERTOOSMALL\n";  break;
+			case FNERR_INVALIDFILENAME: cout << "FNERR_INVALIDFILENAME\n"; break;
+			case FNERR_SUBCLASSFAILURE: cout << "FNERR_SUBCLASSFAILURE\n"; break;
+			default: cout << "User cancelled.\n";
+		}
+	}
+}
+
+static void parsePoly(char *filename) {
+	vector<vector<float>> vertices;
+	vector<vector<int>> polygon;
+	// cout << filename << "\n";
+	ifstream myFile;
+	myFile.open(filename);
+	string line;
+	if (myFile.is_open()) {
+		unsigned int noVertex = 0;
+		unsigned int noPoly = 0;
+		bool firstLine = true;
+		int z = 0;
+		while (getline(myFile, line)) {
+			z++;
+			// Line is a comment
+			if (line.length() >= 2 && line[0] == '/' && line[1] == '/') {
+				continue;
+			}
+			
+			istringstream buffer(line);
+			istream_iterator<string> begin(buffer), end;
+			// Is first line
+			if (firstLine) {
+				vector<string> numbers(begin, end);
+				noVertex = stoi(numbers[0]);
+				noPoly = stoi(numbers[1]);
+				firstLine = false;
+			}
+			// Get vertices
+			else if (vertices.size() < noVertex) {
+				// String coordinates from file
+				vector<string> coordinatesString(begin, end);
+				// Vector that will store actual coordinates
+				vector<float> coordinates;
+				// Iterate strings and skip if describer
+				for (unsigned int i = 0; i < coordinatesString.size(); i++) {
+					if (coordinatesString[i] == "v") continue;
+					coordinates.push_back(stof(coordinatesString[i]));
+				}
+				vertices.push_back(coordinates);
+			}
+			// Get polygon planes
+			else if (polygon.size() < noPoly) {
+				// String coordinates from file
+				vector<string> vertexString(begin, end);
+				// Vector that will store actual vertices used
+				vector<int> verticesUsed;
+				// Iterate strings and skip if describer
+				for (unsigned int i = 0; i < vertexString.size(); i++) {
+					if (vertexString[i] == "f") continue;
+					// Substract one for vector usage
+					verticesUsed.push_back(stoi(vertexString[i]) - 1);
+				}
+				polygon.push_back(verticesUsed);
+			}
+		}
+		myFile.close();
+		drawPoly = true;
+		verticesDraw = vertices;
+		polygonDraw = polygon;
 	}
 }
 
@@ -496,7 +624,7 @@ static void otherSubMenuCB(int choice) {
 		cleared = true;
 		// Reset variables
 		leftMouseActive = NONE;
-		drawAxis = drawTeapot = false;
+		drawAxis = drawTeapot = drawPoly= false;
 		currentQuaternion[0] = 1;
 		currentQuaternion[1] = currentQuaternion[2] = currentQuaternion[3] = 0;
 		axisRotation[0] = axisRotation[1] = axisRotation[2] = 0;
@@ -507,7 +635,8 @@ static void otherSubMenuCB(int choice) {
 		currentAngle = 0;
 		deltaFOV = 0;
 		currentFOV = 30;
-
+		verticesDraw.clear();
+		polygonDraw.clear();
 		clearBothBuffers();
 	}
 	// Refresh
@@ -562,8 +691,14 @@ static void displaySubMenuCB(int choice) {
 		drawAxis = !drawAxis;
 		displayTea();
 	}
-	if (choice == 2) {
+	else if (choice == 2) {
 		drawTeapot = !drawTeapot;
+		displayTea();
+	}
+	else if (choice == 3) {
+		drawTeapot = false;	
+		openDialog();
+		clearBothBuffers();
 		displayTea();
 	}
 }
@@ -589,7 +724,7 @@ void initMenus() {
 	glutAddMenuEntry("Show axes (ON/OFF)", 0);
 	glutAddMenuEntry("Auto-rotate (ON/OFF) NOT IMPLEMENTED", 1);
 	glutAddMenuEntry("Show teapot (ON/OFF)", 2);
-	glutAddMenuEntry("Show file object(s) (ON/OFF) NOT IMPLEMENTED", 3);
+	glutAddMenuEntry("Show file object(s)", 3);
 
 	int lightSM = glutCreateMenu(lightSubMenuCB);
 	glutAddMenuEntry("Light 0 toggle", 0);
@@ -620,7 +755,6 @@ int main(int argc, char **argv) {
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
 	glutInitWindowSize(C_EDGE, C_EDGE);
 	windowID = glutCreateWindow("Montoya5 assignement 2");
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	clearBothBuffers();
 
 	// Initialize menus
