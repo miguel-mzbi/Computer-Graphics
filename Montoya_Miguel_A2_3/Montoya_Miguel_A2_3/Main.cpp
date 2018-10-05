@@ -42,7 +42,7 @@ static vector<float> initialPoint(2); // Stores point P
 static vector<float> currentPoint(2); // Stores point P' when moving mouse
 
 // Lighting
-static bool smooth = true;
+static bool smooth = false;
 static bool l0 = true;
 static bool l1 = false;
 static bool l2 = false;
@@ -885,6 +885,7 @@ static void initMenus() {
 static void initLights() {
 	glEnable(GL_LIGHTING);
 	glMatrixMode(GL_MODELVIEW);
+	glShadeModel(GL_FLAT);
 	glLoadIdentity();
 
 	float lightPosition0[] = { 1.0f, 0.0f, 0.0f, 0.0f };
