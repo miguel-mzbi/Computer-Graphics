@@ -7,7 +7,6 @@
 #include <iterator>
 #include <vector>
 #include <string>
-
 #include <windows.h>
 #include <math.h>
 #include "GL/freeglut.h"
@@ -32,7 +31,7 @@ static const int FOV = 3;
 static int C_EDGE = 700;
 static const float PI = atanf(1) * 4;
 
-static float teaSize = 0.10f; // Teapot size
+static float teaSize = 0.25f; // Teapot size
 
 static bool drawAxis = false; // Draw axis if requested
 static bool drawTeapot = true; // Draw axis if requested
@@ -41,6 +40,14 @@ static int leftMouseActive = NONE; // If true, mouse movement is active. Depends
 
 static vector<float> initialPoint(2); // Stores point P
 static vector<float> currentPoint(2); // Stores point P' when moving mouse
+
+// Lighting
+static bool smooth = true;
+static bool l0 = true;
+static bool l1 = false;
+static bool l2 = false;
+static bool l3 = false;
+static COLORREF customColors[16];
 
 // Polygons
 static bool drawPoly = false;
@@ -131,6 +138,27 @@ static void displayTea() {
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	
+	glDisable(GL_LIGHT0);
+	glDisable(GL_LIGHT1);
+	glDisable(GL_LIGHT2);
+	glDisable(GL_LIGHT3);
+	if (l0) {
+		glEnable(GL_LIGHT0);
+	}
+
+	if (l1) {
+		glEnable(GL_LIGHT1);
+	}
+
+	if (l2) {
+		glEnable(GL_LIGHT2);
+	}
+
+	if (l3) {
+		glEnable(GL_LIGHT3);
+	}
+	
 
 
 	// Rotate teapot (GLOBAL) according to current quaternion
@@ -195,16 +223,28 @@ static void displayTea() {
 
 	glColor3f(1.0, 1.0, 1.0);
 	if (drawTeapot) {
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		// Draw white teapot
 		glutSolidTeapot(teaSize);
 	}
 	if (drawPoly) {
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		// Draw polygon from file
 		// Iterate trough each face
 		for (unsigned int i = 0; i < polygonDraw.size(); i++) {
+			// Compute normal according to first 3 vertex
+			if (!smooth) {
+				vector<float> v1 = verticesDraw[polygonDraw[i][0]];
+				vector<float> v2 = verticesDraw[polygonDraw[i][1]];
+				vector<float> v3 = verticesDraw[polygonDraw[i][2]];
+				float a[3] = { v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2] };
+				float b[3] = { v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2] };;
+				float normal[3] = { a[1] * b[2] - a[2] * b[1], -1 * (a[0] * b[2] - a[2] * b[1]), a[0] * b[1] - a[1] * b[0] };
+				glNormal3fv(normal);
+			}
+			else {
+				glEnable(GL_NORMALIZE);
+			}
 			glBegin(GL_POLYGON);
+
 			// Iterate all vertices
 			for (unsigned int j = 0; j < polygonDraw[i].size(); j++) {
 				int vertex = polygonDraw[i][j];
@@ -403,6 +443,20 @@ static void parsePoly(char *filename) {
 		polygonDraw = polygon;
 	}
 }
+
+static COLORREF getColor() {
+	CHOOSECOLOR cc;
+	ZeroMemory(&cc, sizeof(cc));
+	cc.lStructSize = sizeof(cc);
+	cc.lpCustColors = (LPDWORD)customColors;
+	cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+
+	if (ChooseColor(&cc) == TRUE) {
+		return cc.rgbResult;
+	}
+	return NULL;
+}
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -637,6 +691,8 @@ static void otherSubMenuCB(int choice) {
 		currentFOV = 30;
 		verticesDraw.clear();
 		polygonDraw.clear();
+		l0 = true;
+		l1 = l2 = l3 = false;
 		clearBothBuffers();
 	}
 	// Refresh
@@ -697,6 +753,8 @@ static void displaySubMenuCB(int choice) {
 	}
 	else if (choice == 3) {
 		drawTeapot = false;	
+		verticesDraw.clear();
+		polygonDraw.clear();
 		openDialog();
 		clearBothBuffers();
 		displayTea();
@@ -705,10 +763,77 @@ static void displaySubMenuCB(int choice) {
 
 // Lights submenu callback
 static void lightSubMenuCB(int choice) {
-
+	if (choice == 0) {
+		l0 = !l0;
+	}
+	else if (choice == 1) {
+		COLORREF color = getColor();
+		float colorA[] = { GetRValue(color) / 255.0f, GetGValue(color) / 255.0f, GetBValue(color) / 255.0f, 1.0f };
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, colorA);
+	}
+	else if (choice == 2) {
+		COLORREF color = getColor();
+		float colorA[] = {GetRValue(color)/255.0f, GetGValue(color)/255.0f, GetBValue(color)/255.0f, 1.0f};
+		glLightfv(GL_LIGHT0, GL_SPECULAR, colorA);
+	}
+	else if (choice == 3) {
+		l1 = !l1;
+	}
+	else if (choice == 4) {
+		COLORREF color = getColor();
+		float colorA[] = { GetRValue(color) / 255.0f, GetGValue(color) / 255.0f, GetBValue(color) / 255.0f, 1.0f };
+		glLightfv(GL_LIGHT1, GL_DIFFUSE, colorA);
+	}
+	else if (choice == 5) {
+		COLORREF color = getColor();
+		float colorA[] = { GetRValue(color) / 255.0f, GetGValue(color) / 255.0f, GetBValue(color) / 255.0f, 1.0f };
+		glLightfv(GL_LIGHT1, GL_SPECULAR, colorA);
+	}
+	else if (choice == 6) {
+		l2 = !l2;
+	}
+	else if (choice == 7) {
+		COLORREF color = getColor();
+		float colorA[] = { GetRValue(color) / 255.0f, GetGValue(color) / 255.0f, GetBValue(color) / 255.0f, 1.0f };
+		glLightfv(GL_LIGHT2, GL_DIFFUSE, colorA);
+	}
+	else if (choice == 8) {
+		COLORREF color = getColor();
+		float colorA[] = { GetRValue(color) / 255.0f, GetGValue(color) / 255.0f, GetBValue(color) / 255.0f, 1.0f };
+		glLightfv(GL_LIGHT2, GL_SPECULAR, colorA);
+	}
+	else if (choice == 9) {
+		l3 = !l3;
+	}
+	else if (choice == 10) {
+		COLORREF color = getColor();
+		float colorA[] = { GetRValue(color) / 255.0f, GetGValue(color) / 255.0f, GetBValue(color) / 255.0f, 1.0f };
+		glLightfv(GL_LIGHT3, GL_DIFFUSE, colorA);
+	}
+	else if (choice == 11) {
+		COLORREF color = getColor();
+		float colorA[] = { GetRValue(color) / 255.0f, GetGValue(color) / 255.0f, GetBValue(color) / 255.0f, 1.0f };
+		glLightfv(GL_LIGHT3, GL_SPECULAR, colorA);
+	}
+	else if (choice == 12) {
+		if (smooth) {
+			glShadeModel(GL_FLAT);
+		}
+		else {
+			glShadeModel(GL_SMOOTH);
+		}
+		smooth = !smooth;
+	}
+	displayTea();
 }
 
-void initMenus() {
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+|					   Setup						|
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+static void initMenus() {
 	// Other action submenu
 	int otherSM = glutCreateMenu(otherSubMenuCB);
 	glutAddMenuEntry("Clear", 0);
@@ -728,10 +853,18 @@ void initMenus() {
 
 	int lightSM = glutCreateMenu(lightSubMenuCB);
 	glutAddMenuEntry("Light 0 toggle", 0);
-	glutAddMenuEntry("Light 1 toggle", 1);
-	glutAddMenuEntry("Light 2 toggle", 2);
-	glutAddMenuEntry("Light 3 toggle", 3);
-	glutAddMenuEntry("Smooth shade (ON/OFF)", 3);
+	glutAddMenuEntry("Light 0 DIFFUSE color", 1);
+	glutAddMenuEntry("Light 0 SPECULAR color", 2);
+	glutAddMenuEntry("Light 1 toggle", 3);
+	glutAddMenuEntry("Light 1 DIFFUSE color", 4);
+	glutAddMenuEntry("Light 1 SPECULAR color", 5); 
+	glutAddMenuEntry("Light 2 toggle", 6);
+	glutAddMenuEntry("Light 2 DIFFUSE color", 7);
+	glutAddMenuEntry("Light 2 SPECULAR color", 8); 
+	glutAddMenuEntry("Light 3 toggle", 9);
+	glutAddMenuEntry("Light 3 DIFFUSE color", 10);
+	glutAddMenuEntry("Light 3 SPECULAR color", 11);
+	glutAddMenuEntry("Smooth shade (ON/OFF)", 12);
 
 	// Menu setup
 	glutCreateMenu(NULL);
@@ -741,6 +874,68 @@ void initMenus() {
 	glutAddSubMenu("Lights", lightSM);
 
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
+static void initLights() {
+	glEnable(GL_LIGHTING);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	float lightPosition0[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+	float lightPosition1[] = { -1.0f, 0.0f, 0.0f, 0.0f };
+	float lightPosition2[] = { 0.0f, 1.0f, 0.0f, 0.0f };
+	float lightPosition3[] = { 0.0f, -1.0f, 0.0f, 0.0f };
+
+	float spotDirection0[] = { -1.0f, 0.0f, 0.0f };
+	float spotDirection1[] = { 1.0f, 0.0f, 0.0f };
+	float spotDirection2[] = { 0.0f, -1.0f, 0.0f };
+	float spotDirection3[] = { 0.0f, 1.0f, 0.0f };
+	float spotExponent0[] = { 32 };
+	float spotExponent1[] = { 16 };
+	float spotExponent2[] = { 8 };
+	float spotExponent3[] = { 4 };
+	float specularColor0[] = { 0.7f, 0.7f, 0.0f, 1.0f };
+	float specularColor1[] = { 0.7f, 0.0f, 0.7f, 1.0f };
+	float specularColor2[] = { 0.0f, 0.7f, 0.7f, 1.0f };
+	float specularColor3[] = { 0.7f, 0.7f, 0.7f, 1.0f };
+
+	float ambientColor0[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	float ambientColor1[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	float ambientColor2[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	float ambientColor3[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+
+	float diffuseColor0[] = { 0.1f, 0.7f, 0.7f, 1.0f };
+	float diffuseColor1[] = { 0.75f, 0.2f, 0.1f, 1.0f };
+	float diffuseColor2[] = { 0.2f, 0.8f, 0.1f, 1.0f };
+	float diffuseColor3[] = { 0.0f, 0.0f, 0.95f, 1.0f };
+
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition0);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseColor0);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, specularColor0);
+	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, spotDirection0);
+	glLightfv(GL_LIGHT0, GL_SPOT_EXPONENT, spotExponent0);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientColor0);
+
+	glLightfv(GL_LIGHT1, GL_POSITION, lightPosition1);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuseColor1);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, specularColor1);
+	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, spotDirection1);
+	glLightfv(GL_LIGHT1, GL_SPOT_EXPONENT, spotExponent1);
+	glLightfv(GL_LIGHT1, GL_AMBIENT, ambientColor1);
+
+	glLightfv(GL_LIGHT2, GL_POSITION, lightPosition2);
+	glLightfv(GL_LIGHT2, GL_DIFFUSE, diffuseColor2);
+	glLightfv(GL_LIGHT2, GL_SPECULAR, specularColor2);
+	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, spotDirection2);
+	glLightfv(GL_LIGHT2, GL_SPOT_EXPONENT, spotExponent2);
+	glLightfv(GL_LIGHT2, GL_AMBIENT, ambientColor2);
+
+	glLightfv(GL_LIGHT3, GL_POSITION, lightPosition3);
+	glLightfv(GL_LIGHT3, GL_DIFFUSE, diffuseColor3);
+	glLightfv(GL_LIGHT3, GL_SPECULAR, specularColor3);
+	glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, spotDirection3);
+	glLightfv(GL_LIGHT3, GL_SPOT_EXPONENT, spotExponent3);
+	glLightfv(GL_LIGHT3, GL_AMBIENT, ambientColor3);
 }
 
 /*
@@ -755,10 +950,12 @@ int main(int argc, char **argv) {
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
 	glutInitWindowSize(C_EDGE, C_EDGE);
 	windowID = glutCreateWindow("Montoya5 assignement 2");
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	clearBothBuffers();
 
-	// Initialize menus
+	// Initialize setup
 	initMenus();
+	initLights();
 
 	// Event function
 	glutDisplayFunc(displayTea);

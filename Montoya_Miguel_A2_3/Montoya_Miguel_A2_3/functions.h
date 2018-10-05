@@ -9,3 +9,7 @@ static float computeAngleLocal();
 static float computeAngleGlobal();
 static void openDialog();
 static void parsePoly(char*);
+static COLORREF getColor();
+
+static void initMenus();
+static void initLights();
