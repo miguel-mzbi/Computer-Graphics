@@ -158,6 +158,12 @@ static void displayTea() {
 	if (l3) {
 		glEnable(GL_LIGHT3);
 	}
+	float whiteMaterial[] = { 1.0, 1.0, 1.0 };
+	float shine[] = { 45 };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, whiteMaterial);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, whiteMaterial);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, whiteMaterial);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
 	
 
 
@@ -886,10 +892,10 @@ static void initLights() {
 	float lightPosition2[] = { 0.0f, 1.0f, 0.0f, 0.0f };
 	float lightPosition3[] = { 0.0f, -1.0f, 0.0f, 0.0f };
 
-	float spotDirection0[] = { -1.0f, 0.0f, 0.0f };
-	float spotDirection1[] = { 1.0f, 0.0f, 0.0f };
-	float spotDirection2[] = { 0.0f, -1.0f, 0.0f };
-	float spotDirection3[] = { 0.0f, 1.0f, 0.0f };
+	float spotDirection0[] = { 0.0f, 0.0f, 0.0f };
+	float spotDirection1[] = { 0.0f, 0.0f, 0.0f };
+	float spotDirection2[] = { 0.0f, 0.0f, 0.0f };
+	float spotDirection3[] = { 0.0f, 0.0f, 0.0f };
 	float spotExponent0[] = { 32 };
 	float spotExponent1[] = { 16 };
 	float spotExponent2[] = { 8 };
