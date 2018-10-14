@@ -518,7 +518,7 @@ static void mouseRotationLocalCB(int button, int state, int x, int y) {
 		if (state == GLUT_DOWN) {
 			// Returns coordinates for vector CP
 			screenToPlaneCoords(x, y, initialPoint);
-			// Creates axis of rotation and compensates for teapot location (When dragged). This ensures 90° when creating the axis of rotation
+			// Creates axis of rotation and compensates for teapot location (When dragged). This ensures 90ï¿½ when creating the axis of rotation
 			axisRotation[0] = initialPoint[1];
 			axisRotation[1] = -(initialPoint[0]);
 			axisRotation[2] = 0;
@@ -565,7 +565,7 @@ static void mouseRotationGlobalCB(int button, int state, int x, int y) {
 		if (state == GLUT_DOWN) {
 			// Returns coordinates for vector CP
 			screenToPlaneCoords(x, y, initialPoint);
-			// Creates axis of rotation and compensates for teapot location (When dragged). This ensures 90° when creating the axis of rotation
+			// Creates axis of rotation and compensates for teapot location (When dragged). This ensures 90ï¿½ when creating the axis of rotation
 			axisRotationGlobal[0] = initialPoint[1] - teapotCoords[1];
 			axisRotationGlobal[1] = -(initialPoint[0] - teapotCoords[0]);
 			axisRotationGlobal[2] = 0;
@@ -886,6 +886,7 @@ static void initLights() {
 	glEnable(GL_LIGHTING);
 	glMatrixMode(GL_MODELVIEW);
 	glShadeModel(GL_FLAT);
+	glEnable(GL_DEPTH_TEST);
 	glLoadIdentity();
 
 	float lightPosition0[] = { 1.0f, 0.0f, 0.0f, 0.0f };
