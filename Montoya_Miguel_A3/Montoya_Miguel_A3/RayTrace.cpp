@@ -3,6 +3,7 @@
 #include <limits>
 #include <vector>
 #include <iostream>
+#include <algorithm>
 #include "GL/freeglut.h"
 #include "Color.h"
 #include "Light.h"
@@ -29,8 +30,8 @@ int W = 3;
 
 // Basics 
 int windowID;
-int initialWidth = 200;
-int initialHeight = 200;
+int initialWidth = 301;
+int initialHeight = 301;
 float m = 0; // 2m + 1 = pixels in one side
 
 // Scene
@@ -50,21 +51,62 @@ float fov = (float)M_PI / 6.0f;
 int cameraDirection = -1; // Towards negative z
 vector<float> cameraPos(4);
 
+// Materials
+Material jadeMaterial = Material(12.8f,
+	Color(0.135f, 0.2225f, 0.1575f, 0.95f),
+	Color(0.54f, 0.89f, 0.63f, 0.95f),
+	Color(0.316228f, 0.316228f, 0.316228f, 0.95f));
+
+Material blackRubberMaterial = Material(10.0f,
+	Color(0.02f, 0.02f, 0.02f, 1.0f),
+	Color(0.01f, 0.01f, 0.01f, 1.0f),
+	Color(0.4f, 0.4f, 0.4f, 1.0f));
+
+Material whiteRubberMaterial = Material(10.0f,
+	Color(0.05f, 0.05f, 0.05f, 1.0f),
+	Color(0.5f, 0.5f, 0.5f, 1.0f),
+	Color(0.7f, 0.7f, 0.7f, 1.0f));
+
 // Objects
+float r = 1; // Default radius of sphere / Chess board located at -r
+// Sphere
 float c = 2; // Distance from center of sphere to plane
-float r = 1; // Default radius of sphere
-Material jadeMaterial = Material(12.8f, 
-							Color(0.135f, 0.2225f, 0.1575f, 0.95f), 
-							Color(0.54f, 0.89f, 0.63f, 0.95f), 
-							Color(0.316228f, 0.316228f, 0.316228f, 0.95f));
 vector<float> sphere1Pos;
 Sphere sphere1;
+// Plane
+vector<float> v1(4); // 3 points defining the plane
+vector<float> v2(4);
+vector<float> v3(4);
+vector<float> planeNormal; // Normal to board
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-|			OpenGl Utility functions				|
+|				Utility functions					|
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+void dotProduct(vector<float> &A, vector<float> &B, float &result) {
+	result = A[X] * B[X] + A[Y] * B[Y] + A[Z] * B[Z];
+}
+
+void scalarProduct(vector<float> &A, float &scalar, vector<float> &result) {
+	result[X] = A[X] * scalar;
+	result[Y] = A[Y] * scalar;
+	result[Z] = A[Z] * scalar;
+}
+
+void vectorSubstraction(vector<float> &A, vector<float> &B, vector<float> &result) {
+	result[X] = A[X] - B[X];
+	result[Y] = A[Y] - B[Y];
+	result[Z] = A[Z] - B[Z];
+}
+
+void normalize(vector<float> &A) {
+	float c = sqrtf(A[X] * A[X] + A[Y] * A[Y] + A[Z] * A[Z]);
+	A[X] = A[X] / c;
+	A[Y] = A[Y] / c;
+	A[Z] = A[Z] / c;
+}
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -133,6 +175,22 @@ int sphereIntersection(vector<vector<float>*> &ray, Sphere &sphere, float &t) {
 	}
 }
 
+int planeIntersection(vector<vector<float>*> &ray, vector<float> &normal, vector<float> &point, float &t) {
+	vector<float> start(4);
+	vector<float> end(4);
+	start = *ray[START];
+	end = *ray[END];
+	float den = normal[X] * end[X] + normal[Y] * end[Y] + normal[Z] * end[Z];
+	// Return no hit if there is no intersection (parallel)
+	if (den == 0) return 0;
+	float num = -normal[X] * start[X] - normal[Y] * start[Y] - normal[Z] * start[Z] + normal[X] * point[X] + normal[Y] * point[Y] + normal[Z] * point[Z];
+	t = num / den;
+	// Return no hit if intersection is behind
+	if (t < 0) return 0;
+	else return 1;
+
+}
+
 int trace(vector<vector<float>*> &ray, vector<float> &p, vector<float> &normal, Material &material) {
 	vector<float> intersections;
 	vector<int> objects;
@@ -142,6 +200,11 @@ int trace(vector<vector<float>*> &ray, vector<float> &p, vector<float> &normal, 
 		hit = 1;
 		intersections.push_back(t);
 		objects.push_back(1);
+	}
+	if (planeIntersection(ray, planeNormal, v1, t)) {
+		hit = 1;
+		intersections.push_back(t);
+		objects.push_back(0);
 	}
 	// Get closest t from all objects
 	if (hit) {
@@ -155,8 +218,43 @@ int trace(vector<vector<float>*> &ray, vector<float> &p, vector<float> &normal, 
 		}
 		// Find coordinate of intersection with closest
 		findCoord(ray, smallestT, p);
+		if (correspondingObject == 0) {
+			normal = planeNormal;
+			float modulX;
+			float modulZ;
+			if (p[X] < 0) {
+				modulX = fmodf(fmodf(p[X], 2.0f) + 2.0f, 2.0f);
+			}
+			else {
+				modulX = fmodf(p[X], 2.0f);
+			}
+			if (p[Z] < 0) {
+				modulZ = fmodf(fmodf(p[Z], 2.0f) + 2.0f, 2.0f);
+			}
+			else {
+				modulZ = fmodf(p[Z], 2.0f);
+			}
+
+			if (modulZ < 1) {
+				if (modulX < 1) {
+					material = blackRubberMaterial;
+				}
+				else {
+					material = whiteRubberMaterial;
+				}
+			}
+			else {
+				if (modulX < 1) {
+					material = whiteRubberMaterial;
+				}
+				else {
+					material = blackRubberMaterial;
+				}
+			}
+			
+		}
 		// If it was a sphere (Object = 1)
-		if (correspondingObject == 1) {
+		else if (correspondingObject == 1) {
 			findSphereNormal(sphere1, p, normal);
 			material = sphere1.material;
 		}
@@ -165,10 +263,58 @@ int trace(vector<vector<float>*> &ray, vector<float> &p, vector<float> &normal, 
 }
 
 void getShade(vector<float> &intersection, vector<float> &normal, Material &material, Color &color) {
-	float r = material.ambientC.r * light0.ambientC.r;
-	float g = material.ambientC.g * light0.ambientC.g;
-	float b = material.ambientC.b * light0.ambientC.b;
-	float a = material.ambientC.a * light0.ambientC.a;
+	normalize(normal);
+	vector<float> lightVector(4);
+	calculateDirection(intersection, lightPos, lightVector);
+	//calculateDirection(lightPos, intersection, lightVector);
+	normalize(lightVector);
+
+	vector<float> cameraVector(4);
+	calculateDirection(intersection, cameraPos, cameraVector);
+	//calculateDirection(lightPos, intersection, cameraVectorR);
+	normalize(cameraVector);
+
+	float diffuseValue;
+	dotProduct(lightVector, normal, diffuseValue);
+	diffuseValue = max(0.0f, diffuseValue);
+
+	float specularValue;
+
+	float dot;
+	dotProduct(normal, lightVector, dot);
+	float scalar = 2.0f * dot;
+	vector<float> nScalar(4);
+	scalarProduct(normal, scalar, nScalar);
+	vector<float> rVector(4);
+	vectorSubstraction(nScalar, lightVector, rVector);
+	dotProduct(cameraVector, rVector, specularValue);
+	specularValue = max(0.0f, specularValue);
+	float specularExp = powf(specularValue, material.shine);
+
+
+	float r = material.ambientC.r * light0.ambientC.r 
+			+ material.diffuseC.r * light0.diffuseC.r * diffuseValue 
+			+ material.specularC.r * light0.specularC.r * specularExp;
+	float g = material.ambientC.g * light0.ambientC.g
+			+ material.diffuseC.g * light0.diffuseC.g * diffuseValue 
+			+ material.specularC.g * light0.specularC.g * specularExp;
+	float b = material.ambientC.b * light0.ambientC.b 
+			+ material.diffuseC.b * light0.diffuseC.b * diffuseValue 
+			+ material.specularC.b * light0.specularC.b * specularExp;
+	float a = material.ambientC.a * light0.ambientC.a 
+			+ material.diffuseC.a * light0.diffuseC.a * diffuseValue 
+			+ material.specularC.a * light0.specularC.a * specularExp;
+
+	if (r > 1.0) r = 1.0;
+	if (g > 1.0) g = 1.0;
+	if (b > 1.0) b = 1.0;
+	if (a > 1.0) a = 1.0;
+
+	if (r < 0.0) r = 0.0;
+	if (g < 0.0) g = 0.0;
+	if (b < 0.0) b = 0.0;
+	if (a < 0.0) a = 0.0;
+
 	color = Color(r, g, b, a);
 }
 
@@ -265,9 +411,18 @@ void initCamera() {
 
 // Create virtual objects in world
 void createObjects() {
+	// Sphere
 	vector<float> pos{ 0.0, 0.0, -c };
 	sphere1Pos = pos;
 	sphere1 = Sphere(r, sphere1Pos, jadeMaterial);
+
+	// Board
+	v1 = vector<float>({ 0.0f, -r, 0.0f, 1.0f });
+	v2 = vector<float>({ 0.0f, -r, 1.0f, 1.0f });
+	v3 = vector<float>({ 1.0f, -r, 0.0f, 1.0f });
+	vector<float> a{ v2[X] - v1[X], v2[Y] - v1[Y], v2[Z] - v1[Z] };
+	vector<float> b{ v3[X] - v1[X], v3[Y] - v1[Y], v3[Z] - v1[Z] };
+	planeNormal = vector<float>({ a[Y] * b[Z] - a[Z] * b[Y], -1 * (a[X] * b[Z] - a[Z] * b[X]), a[X] * b[Y] - a[Y] * b[X] });
 }
 
 /*
