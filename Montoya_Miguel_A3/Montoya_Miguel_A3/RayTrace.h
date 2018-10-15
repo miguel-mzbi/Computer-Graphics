@@ -3,10 +3,9 @@
 #ifndef RAYTRACE_H
 #define RAYTRACE_H
 
-void calculateDirection(std::vector<float> &startP, std::vector<float> &finalP, std::vector<float> &direction);
-
-void initWorld();
-void initCamera();
-void createObjects();
+void displayFunction();
+void resizeFunction(int width, int height);
+void mouseFunction(int button, int state, int x, int y);
+void idleFunction();
 
 #endif

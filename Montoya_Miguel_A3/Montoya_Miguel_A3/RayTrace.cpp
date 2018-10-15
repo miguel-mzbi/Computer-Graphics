@@ -4,7 +4,9 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include "GL/glui.h"
 #include "GL/freeglut.h"
+#include "BuildGLUI.h"
 #include "Color.h"
 #include "Light.h"
 #include "Material.h"
@@ -30,20 +32,20 @@ int W = 3;
 
 // Basics 
 int windowID;
-int initialWidth = 301;
-int initialHeight = 301;
+int edge = 101;
 float m = 0; // 2m + 1 = pixels in one side
+int shadowActive = 0;
 
 // Scene
 Color const bgColor = Color(0.0, 0.5, 1.0, 1.0);
 Buffer buffer;
 
 // Light
-vector<float> lightPos{1, 2, -1};
-Light light0 = Light(lightPos,
-					Color(0.2f, 0.2f, 0.2f, 1.0f),
-					Color(1.0f, 1.0f, 1.0f, 1.0f),
-					Color(1.0f, 1.0f, 1.0f, 1.0f));
+vector<float> lightPos{ 1, 2, -1, 0 };
+Color ambientLight = Color(0.2f, 0.2f, 0.2f, 1.0f);
+Color diffuseLight = Color(1.0f, 1.0f, 1.0f, 1.0f);
+Color specularLight = Color(1.0f, 1.0f, 1.0f, 1.0f);
+Light light0;
 
 // Camera
 float e = 1; // Distance from plane to camera
@@ -78,6 +80,18 @@ vector<float> v1(4); // 3 points defining the plane
 vector<float> v2(4);
 vector<float> v3(4);
 vector<float> planeNormal; // Normal to board
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+|				Function declarations				|
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+void calculateDirection(vector<float> &startP, vector<float> &finalP, vector<float> &direction);
+void initWorld();
+void initCamera();
+void initLight();
+void createObjects();
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -350,15 +364,17 @@ void calculateScene() {
 	vector<vector<float>*> ray(2);
 	ray[START] = &currentWorldP;
 	ray[END] = &direction;
+	int bv = 0;
 	
 	// Start at left column, increment column at each outside for iteration
-	currentWorldP[X] = (0 - (initialWidth / 2.0f)) * (1.0f / (initialWidth / 2.0f)) + (1.0f / m) / 2.0f;
-	for (int i = 0; i < initialWidth; i++) {
+	currentWorldP[X] = (0 - (edge / 2.0f)) * (1.0f / (edge / 2.0f)) + (1.0f / m) / 2.0f;
+	for (int i = 0; i < edge; i++) {
+		//cout << "x:" << currentWorldP[X] << "\n";
 		// Start at bottom row, increment row at each inner for iteration
-		currentWorldP[Y] = (0 - (initialHeight / 2.0f)) * (1.0f / (initialHeight / 2.0f)) + (1.0f / m) / 2.0f;
-		for (int j = 0; j < initialHeight; j++) {
+		currentWorldP[Y] = (0 - (edge / 2.0f)) * (1.0f / (edge / 2.0f)) + (1.0f / m) / 2.0f;
+		
+		for (int j = 0; j < edge; j++) {
 			Color pixelColor;
-			cout << "x:" << currentWorldP[X] << " | " << "y:" << currentWorldP[Y] << "\n";
 			// Direction towards position in plane
 			calculateDirection(cameraPos, currentWorldP, direction);
 			// Find color of pixel
@@ -377,13 +393,38 @@ void calculateScene() {
 */
 
 void displayFunction() {
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glFlush();
+	
+	// Basic setup for changes made via menu
+	m = (edge - 1) / 2.0f;
+	buffer = Buffer(edge, edge);
+	initCamera();
+	initLight();
+	createObjects();
 
 	calculateScene();
 	buffer.drawBuffer();
 
 	glFlush();
 }
+
+void resizeFunction(int width, int height) {
+	if (width == 0 || height == 0) return;
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	int deltaH = 0, deltaW = 0;
+	deltaH = abs(height - edge) / 2;
+	deltaW = abs(width - edge) / 2;
+	glMatrixMode(GL_MODELVIEW);
+	glViewport(deltaW, deltaH, edge, edge);
+}
+
+void mouseFunction(int button, int state, int x, int y) { ; }
+void idleFunction() { ; }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -397,13 +438,14 @@ void initWorld() {
 	glLoadIdentity();
 	glOrtho(-1.0, 1.0, -1.0, 1.0, 0.0, 10.0);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
-
-	buffer = Buffer(initialWidth, initialHeight);
-
-	initCamera();
-	createObjects();
 }
 
+void initLight() {
+	light0 = Light(lightPos,
+		ambientLight,
+		diffuseLight,
+		specularLight);		
+}
 // Create camera
 void initCamera() {
 	cameraPos = vector<float>({ 0.0, 0.0, e, 1 });
@@ -432,21 +474,24 @@ void createObjects() {
 */
 
 int main(int argc, char** argv) {
-	// Compute m
-	m = (initialWidth - 1) / 2.0f;
-
 	// Basic OpenGL initial setup
 	glutInit(&argc, argv);
-	glutInitWindowSize(initialWidth, initialHeight);
+	glutInitWindowSize(edge, edge);
 	glutInitWindowPosition(350, 350);
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 	windowID = glutCreateWindow("Montoya_Miguel A3");
 	glutSetWindow(windowID);
+
+	buildGLUI(windowID);
 	
 	// Initialize basics
 	initWorld();
 
+	// Set up callbacks
 	glutDisplayFunc(displayFunction);
+	glutReshapeFunc(resizeFunction);
+
+	// Start loop
 	glutMainLoop();
 	return 0;
 }
