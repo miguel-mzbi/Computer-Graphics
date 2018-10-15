@@ -4,8 +4,8 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
-#include "GL/glui.h"
-#include "GL/freeglut.h"
+#include <GL/glui.h>
+//#include "GL/freeglut.h"
 #include "BuildGLUI.h"
 #include "Color.h"
 #include "Light.h"
@@ -41,7 +41,7 @@ Buffer buffer;
 
 // Light
 vector<float> lightPos{ 1, 2, -1, 0 };
-Color ambientLight = Color(0.2f, 0.2f, 0.2f, 1.0f);
+Color ambientLight = Color(0.5f, 0.5f, 0.5f, 1.0f);
 Color diffuseLight = Color(1.0f, 1.0f, 1.0f, 1.0f);
 Color specularLight = Color(1.0f, 1.0f, 1.0f, 1.0f);
 Light light0;
@@ -267,7 +267,7 @@ int trace(vector<vector<float>*> &ray, vector<float> &p, vector<float> &normal, 
 					material = blackRubberMaterial;
 				}
 			}
-			
+
 		}
 		// If it was a sphere (Object = 1)
 		else if (correspondingObject == 1) {
@@ -333,18 +333,18 @@ void getShade(vector<float> &intersection, vector<float> &normal, Material &mate
 		specularExp = 0.0f;
 	}
 
-	float r = material.ambientC.r * light0.ambientC.r 
-			+ material.diffuseC.r * light0.diffuseC.r * diffuseValue 
-			+ material.specularC.r * light0.specularC.r * specularExp;
+	float r = material.ambientC.r * light0.ambientC.r
+		+ material.diffuseC.r * light0.diffuseC.r * diffuseValue
+		+ material.specularC.r * light0.specularC.r * specularExp;
 	float g = material.ambientC.g * light0.ambientC.g
-			+ material.diffuseC.g * light0.diffuseC.g * diffuseValue 
-			+ material.specularC.g * light0.specularC.g * specularExp;
-	float b = material.ambientC.b * light0.ambientC.b 
-			+ material.diffuseC.b * light0.diffuseC.b * diffuseValue 
-			+ material.specularC.b * light0.specularC.b * specularExp;
-	float a = material.ambientC.a * light0.ambientC.a 
-			+ material.diffuseC.a * light0.diffuseC.a * diffuseValue 
-			+ material.specularC.a * light0.specularC.a * specularExp;
+		+ material.diffuseC.g * light0.diffuseC.g * diffuseValue
+		+ material.specularC.g * light0.specularC.g * specularExp;
+	float b = material.ambientC.b * light0.ambientC.b
+		+ material.diffuseC.b * light0.diffuseC.b * diffuseValue
+		+ material.specularC.b * light0.specularC.b * specularExp;
+	float a = material.ambientC.a * light0.ambientC.a
+		+ material.diffuseC.a * light0.diffuseC.a * diffuseValue
+		+ material.specularC.a * light0.specularC.a * specularExp;
 
 	if (r > 1.0) r = 1.0;
 	if (g > 1.0) g = 1.0;
@@ -393,14 +393,14 @@ void calculateScene() {
 	ray[START] = &currentWorldP;
 	ray[END] = &direction;
 	int bv = 0;
-	
+
 	// Start at left column, increment column at each outside for iteration
 	currentWorldP[X] = (0 - (edge / 2.0f)) * (1.0f / (edge / 2.0f)) + (1.0f / m) / 2.0f;
 	for (int i = 0; i < edge; i++) {
-		//cout << "x:" << currentWorldP[X] << "\n";
+		cout << "x:" << currentWorldP[X] << "\n";
 		// Start at bottom row, increment row at each inner for iteration
 		currentWorldP[Y] = (0 - (edge / 2.0f)) * (1.0f / (edge / 2.0f)) + (1.0f / m) / 2.0f;
-		
+
 		for (int j = 0; j < edge; j++) {
 			Color pixelColor;
 			// Direction towards position in plane
@@ -424,7 +424,7 @@ void displayFunction() {
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glFlush();
-	
+
 	// Basic setup for changes made via menu
 	m = (edge - 1) / 2.0f;
 	buffer = Buffer(edge, edge);
@@ -472,7 +472,7 @@ void initLight() {
 	light0 = Light(lightPos,
 		ambientLight,
 		diffuseLight,
-		specularLight);		
+		specularLight);
 }
 // Create camera
 void initCamera() {
@@ -511,7 +511,7 @@ int main(int argc, char** argv) {
 	glutSetWindow(windowID);
 
 	buildGLUI(windowID);
-	
+
 	// Initialize basics
 	initWorld();
 

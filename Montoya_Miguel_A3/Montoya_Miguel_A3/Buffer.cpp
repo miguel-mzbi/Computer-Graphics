@@ -1,4 +1,4 @@
-#include "GL/freeglut.h"
+#include <GL/glui.h>
 #include "Color.h"
 #include "Buffer.h"
 

@@ -1,8 +1,7 @@
 #include <iostream>
 #include <vector>
-#include "GL/glui.h"
-#include "GL/glui.h"
-#include "GL/freeglut.h"
+#include <GL/glui.h>
+//#include "GL/freeglut.h"
 #include "BuildGLUI.h"
 #include "RayTrace.h"
 #include "Color.h"
@@ -33,7 +32,6 @@ int l = edge;
 void voidRecall(int c) { ; }
 
 void getM(int c) {
-	std::cout << l << "|" << edge << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+\n";
 	edge = l;
 	m = (edge - 1) / 2.0f;
 	glutReshapeWindow(edge, edge);
