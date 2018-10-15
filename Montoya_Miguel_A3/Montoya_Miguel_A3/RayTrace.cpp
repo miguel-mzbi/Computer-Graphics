@@ -34,7 +34,6 @@ int W = 3;
 int windowID;
 int edge = 101;
 float m = 0; // 2m + 1 = pixels in one side
-int shadowActive = 0;
 
 // Scene
 Color const bgColor = Color(0.0, 0.5, 1.0, 1.0);
@@ -46,6 +45,8 @@ Color ambientLight = Color(0.2f, 0.2f, 0.2f, 1.0f);
 Color diffuseLight = Color(1.0f, 1.0f, 1.0f, 1.0f);
 Color specularLight = Color(1.0f, 1.0f, 1.0f, 1.0f);
 Light light0;
+int lightAtInfinity = 1;
+int shadowActive = 0;
 
 // Camera
 float e = 1; // Distance from plane to camera
@@ -205,7 +206,7 @@ int planeIntersection(vector<vector<float>*> &ray, vector<float> &normal, vector
 
 }
 
-int trace(vector<vector<float>*> &ray, vector<float> &p, vector<float> &normal, Material &material) {
+int trace(vector<vector<float>*> &ray, vector<float> &p, vector<float> &normal, Material &material, int &isChess) {
 	vector<float> intersections;
 	vector<int> objects;
 	int hit = 0;
@@ -233,6 +234,7 @@ int trace(vector<vector<float>*> &ray, vector<float> &p, vector<float> &normal, 
 		// Find coordinate of intersection with closest
 		findCoord(ray, smallestT, p);
 		if (correspondingObject == 0) {
+			isChess = 1;
 			normal = planeNormal;
 			float modulX;
 			float modulZ;
@@ -276,35 +278,60 @@ int trace(vector<vector<float>*> &ray, vector<float> &p, vector<float> &normal, 
 	return hit;
 }
 
-void getShade(vector<float> &intersection, vector<float> &normal, Material &material, Color &color) {
+void getShade(vector<float> &intersection, vector<float> &normal, Material &material, Color &color, int isChess = 0) {
 	normalize(normal);
 	vector<float> lightVector(4);
-	calculateDirection(intersection, lightPos, lightVector);
-	//calculateDirection(lightPos, intersection, lightVector);
+	if (lightAtInfinity) {
+		lightVector[X] = lightPos[X];
+		lightVector[Y] = lightPos[Y];
+		lightVector[Z] = lightPos[Z];
+		lightVector[W] = 0.0f;
+	}
+	else {
+		calculateDirection(intersection, lightPos, lightVector);
+		//calculateDirection(lightPos, intersection, lightVector);
+	}
 	normalize(lightVector);
+
+	int isShadow = 0;
+	if (shadowActive && isChess) {
+		// Ray with start at point ending at the infinity
+		vector<vector<float>*> ray(2);
+		ray[START] = &intersection;
+		ray[END] = &lightVector;
+		float temp = 0;
+		if (sphereIntersection(ray, sphere1, temp)) {
+			isShadow = 1;
+		}
+	}
 
 	vector<float> cameraVector(4);
 	calculateDirection(intersection, cameraPos, cameraVector);
-	//calculateDirection(lightPos, intersection, cameraVectorR);
+	//calculateDirection(lightPos, intersection, cameraVector);
 	normalize(cameraVector);
 
 	float diffuseValue;
-	dotProduct(lightVector, normal, diffuseValue);
-	diffuseValue = max(0.0f, diffuseValue);
+	float specularExp;
+	if (!isShadow) {
+		dotProduct(lightVector, normal, diffuseValue);
+		diffuseValue = max(0.0f, diffuseValue);
 
-	float specularValue;
-
-	float dot;
-	dotProduct(normal, lightVector, dot);
-	float scalar = 2.0f * dot;
-	vector<float> nScalar(4);
-	scalarProduct(normal, scalar, nScalar);
-	vector<float> rVector(4);
-	vectorSubstraction(nScalar, lightVector, rVector);
-	dotProduct(cameraVector, rVector, specularValue);
-	specularValue = max(0.0f, specularValue);
-	float specularExp = powf(specularValue, material.shine);
-
+		float specularValue;
+		float dot;
+		dotProduct(normal, lightVector, dot);
+		float scalar = 2.0f * dot;
+		vector<float> nScalar(4);
+		scalarProduct(normal, scalar, nScalar);
+		vector<float> rVector(4);
+		vectorSubstraction(nScalar, lightVector, rVector);
+		dotProduct(cameraVector, rVector, specularValue);
+		specularValue = max(0.0f, specularValue);
+		specularExp = powf(specularValue, material.shine);
+	}
+	else {
+		diffuseValue = 0.0f;
+		specularExp = 0.0f;
+	}
 
 	float r = material.ambientC.r * light0.ambientC.r 
 			+ material.diffuseC.r * light0.diffuseC.r * diffuseValue 
@@ -336,8 +363,9 @@ void findColor(vector<vector<float>*> &ray, Color &color) {
 	vector<float> intersection(4);
 	vector<float> normal(4);
 	Material intersectionMaterial;
-	if (trace(ray, intersection, normal, intersectionMaterial)) {
-		getShade(intersection, normal, intersectionMaterial, color);
+	int isChess = 0;
+	if (trace(ray, intersection, normal, intersectionMaterial, isChess)) {
+		getShade(intersection, normal, intersectionMaterial, color, isChess);
 	}
 	else {
 		color = bgColor;

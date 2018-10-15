@@ -23,6 +23,7 @@ extern float m;
 extern int edge;
 extern float e;
 extern float r;
+extern int lightAtInfinity;
 extern std::vector<float> lightPos;
 extern Color ambientLight;
 extern Color diffuseLight;
@@ -48,7 +49,6 @@ void buildGLUI(int windowID) {
 	glui->add_statictext("above OpenGl window.");
 
 	GLUI_Panel *panel1 = new GLUI_Panel(glui, "Shadow", GLUI_PANEL_EMBOSSED);
-	glui->add_statictext_to_panel(panel1, "(Not implemented)");
 	new GLUI_Checkbox(panel1, "Shadow Active", &shadowActive, 11, voidRecall);
 
 	GLUI_Panel *panel2 = new GLUI_Panel(glui, "Sphere", GLUI_PANEL_EMBOSSED);
@@ -76,7 +76,11 @@ void buildGLUI(int windowID) {
 	new GLUI_EditText(panel3, "g (float)", &specularLight.g, 332, voidRecall);
 	new GLUI_EditText(panel3, "b (float)", &specularLight.b, 333, voidRecall);
 	new GLUI_EditText(panel3, "a (float)", &specularLight.a, 334, voidRecall);
-	glui->add_statictext_to_panel(panel3, "Direction (Position at infinity).");
+	glui->add_statictext_to_panel(panel3, "");
+	glui->add_statictext_to_panel(panel3, "Change from directional light");
+	glui->add_statictext_to_panel(panel3, "(At infinity) to point light.");
+	new GLUI_Checkbox(panel3, "Directional", &lightAtInfinity, 11, voidRecall);
+	glui->add_statictext_to_panel(panel3, "Direction/Position.");
 	new GLUI_EditText(panel3, "x (float)", &lightPos[0], 341, voidRecall);
 	new GLUI_EditText(panel3, "y (float)", &lightPos[1], 342, voidRecall);
 	new GLUI_EditText(panel3, "z (float)", &lightPos[2], 343, voidRecall);
