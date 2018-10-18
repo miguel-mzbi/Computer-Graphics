@@ -39,7 +39,7 @@ void getM(int c) {
 
 void buildGLUI(int windowID) {
 
-	glui = GLUI_Master.create_glui("GLUI");
+	glui = GLUI_Master.create_glui("GLUI", 0, 500, 500);
 	glui->set_main_gfx_window(windowID);
 	GLUI_Master.set_glutReshapeFunc(resizeFunction);
 
