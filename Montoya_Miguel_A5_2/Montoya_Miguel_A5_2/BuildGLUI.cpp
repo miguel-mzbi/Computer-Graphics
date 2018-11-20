@@ -29,6 +29,7 @@ extern void changeCurve();
 extern void applyChanges();
 extern void updateKWeightSpinner();
 extern void updateWeightSpinner();
+extern void splitDeCastel(float);
 
 void emptyCB(int) {
 	applyChanges();
@@ -83,6 +84,11 @@ void weightCB(int c) {
 	else if (c == 41) updateWeightSpinner();
 }
 
+void domainSplitting(int c) {
+	if (c == 50) splitDeCastel(0.5f);
+	else if (c == 51) splitDeCastel(2.0f);
+}
+
 void buildGLUI(int mainWindowID) {
 
 	GLUI_Master.set_glutReshapeFunc(resizeFunction);
@@ -127,11 +133,15 @@ void buildGLUI(int mainWindowID) {
 	GLUI_Panel *panelButtons = new GLUI_Panel(glui, "", GLUI_PANEL_NONE);
 	new GLUI_Button(panelButtons, "Elevate deree", 30, updateDegreeCallback);
 	decreaseButton = new GLUI_Button(panelButtons, "Lower degree", 31, updateDegreeCallback);
+	new GLUI_Button(panelButtons, "Domain halving", 50, domainSplitting);
+	new GLUI_Button(panelButtons, "Domain doubling", 51, domainSplitting);
+	new GLUI_StaticText(panelButtons, "");
 	new GLUI_Button(panelButtons, "Clear", 32, clearCallback);
 	new GLUI_Button(panelButtons, "EXIT", 33, exitProg);
 	new GLUI_StaticText(panelButtons, "");
 	new GLUI_StaticText(panelButtons, "There can only be at");
-	new GLUI_StaticText(panelButtons, "most 32 control points");
-
-
+	new GLUI_StaticText(panelButtons, "most 32 control points.");
+	new GLUI_StaticText(panelButtons, "");
+	new GLUI_StaticText(panelButtons, "Right-click to get");
+	new GLUI_StaticText(panelButtons, "color options.");
 }

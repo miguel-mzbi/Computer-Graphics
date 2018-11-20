@@ -559,6 +559,46 @@ void drawExtendedBezier(int curveToDraw) {
 	glEnd();
 }
 
+void splitDeCastelRec(vector<vector<float>> &points, vector<float> &weights, vector<vector<float>> &leftPoints, vector<float> &leftWeights, float t) {
+	if (points.size() == 1) {
+		leftPoints.push_back(points[0]);
+		leftWeights.push_back(weights[0]);
+	}
+	else {
+		// Get next weights and points
+		vector<vector<float>> newPoints(points.size() - 1);
+		vector<float> newWeights(weights.size() - 1);
+		for (unsigned int i = 0; i < newPoints.size(); i++) {
+			if (i == 0) {
+				leftPoints.push_back(points[0]);
+				leftWeights.push_back(weights[0]);
+			}
+			newWeights[i] = (1 - t) * weights[i] + t * weights[i + 1];
+			float x = (1 - t) * weights[i] * points[i][X] / newWeights[i] + t * weights[i + 1] * points[i + 1][X] / newWeights[i];
+			float y = (1 - t) * weights[i] * points[i][Y] / newWeights[i] + t * weights[i + 1] * points[i + 1][Y] / newWeights[i];
+			newPoints[i] = vector<float>{ x, y };
+		}
+		splitDeCastelRec(newPoints, newWeights, leftPoints, leftWeights, t);
+	}
+}
+
+void splitDeCastel(float t) {
+	vector<vector<float>> leftPoints;
+	vector<float> leftWeights;
+	if (selectedCurve == 0) {
+		splitDeCastelRec(controlPointsCurve0, weightsCurve0, leftPoints, leftWeights, t);
+		controlPointsCurve0 = leftPoints;
+		weightsCurve0 = leftWeights;
+	}
+	else if (selectedCurve == 1) {
+		splitDeCastelRec(controlPointsCurve1, weightsCurve1, leftPoints, leftWeights, t);
+		controlPointsCurve1 = leftPoints;
+		weightsCurve1 = leftWeights;
+	}
+	forceUpdateMain = 1;
+	forceUpdateSec = 1;
+}
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 |				Weight functions					|
