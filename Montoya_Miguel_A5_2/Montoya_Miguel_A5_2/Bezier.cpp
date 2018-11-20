@@ -46,6 +46,10 @@ vector<float> weightsHistory;
 int selectedWeightModify = -1;
 int movingBar = 0;
 int selectedHoverBar = -1;
+extern float selectedWeightSpinner;
+extern int selectedKSpinner;
+extern GLUI_Spinner *spinnerKBar;
+extern GLUI_Spinner *spinnerKWeight;
 
 // Curve 0
 vector<vector<float>> controlPointsCurve0;
@@ -616,6 +620,33 @@ void drawBars() {
 	}
 }
 
+void updateKWeightSpinner() {
+	vector<float> weights;
+	if (selectedCurve == 0) {
+		weights = weightsCurve0;
+	}
+	else {
+		weights = weightsCurve1;
+	}
+	if ((unsigned)selectedKSpinner >= weights.size()) selectedKSpinner = weights.size();
+	selectedWeightSpinner = weights[selectedKSpinner - 1];
+	glui->sync_live();
+}
+
+void updateWeightSpinner() {
+	vector<float> *weights;
+	if (selectedCurve == 0) {
+		weights = &weightsCurve0;
+	}
+	else {
+		weights = &weightsCurve1;
+	}
+	(*weights)[selectedKSpinner - 1] = selectedWeightSpinner;
+	selectedHoverBar = selectedKSpinner - 1;
+	forceUpdateMain = 1;
+	forceUpdateSec = 1;
+}
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 |				MAIN Callback functions				|
@@ -703,10 +734,18 @@ void mouseFunction(int button, int state, int x, int y) {
 			if (selectedCurve == 0) {
 				controlPointsCurve0.push_back(world);
 				weightsCurve0.push_back(1.0f);
+				if (weightsCurve0.size() >= 0) {
+					spinnerKBar->enable();
+					spinnerKWeight->enable();
+				}
 			}
 			else {
 				controlPointsCurve1.push_back(world);
 				weightsCurve1.push_back(1.0f);
+				if (weightsCurve1.size() >= 0) {
+					spinnerKBar->enable();
+					spinnerKWeight->enable();
+				}
 			}
 			forceUpdateSec = 1;
 		}
@@ -725,6 +764,10 @@ void mouseFunction(int button, int state, int x, int y) {
 						&& world[Y] - 0.02f <= controlPointsCurve0[i][Y] && controlPointsCurve0[i][Y] <= world[Y] + 0.02f) {
 						controlPointsCurve0.erase(controlPointsCurve0.begin() + i);
 						weightsCurve0.erase(weightsCurve0.begin() + i);
+						if (weightsCurve0.size() >= 0) {
+							spinnerKBar->disable();
+							spinnerKWeight->disable();
+						}
 					}
 				}
 			}
@@ -734,6 +777,10 @@ void mouseFunction(int button, int state, int x, int y) {
 						&& world[Y] - 0.02f <= controlPointsCurve1[i][Y] && controlPointsCurve1[i][Y] <= world[Y] + 0.02f) {
 						controlPointsCurve1.erase(controlPointsCurve1.begin() + i);
 						weightsCurve1.erase(weightsCurve1.begin() + i);
+						if (weightsCurve1.size() >= 0) {
+							spinnerKBar->disable();
+							spinnerKWeight->disable();
+						}
 					}
 				}
 			}
@@ -921,6 +968,12 @@ void idleFunction() {
 		}
 		drawPoints();
 
+		if (selectedHoverBar != -1) {
+			forceUpdateMain = 1;
+			selectedHoverBar = -1;
+		}
+		
+
 		forceUpdateMain = 0;
 		glFlush();
 	}
@@ -1066,6 +1119,11 @@ void secondaryMouseFunction(int button, int state, int cx, int cy) {
 
 		float newWeight = (world[Y] + 0.3f) / 0.12f;
 		(*weightControls)[selectedWeightModify] = newWeight;
+
+		selectedKSpinner = selectedWeightModify + 1;
+		selectedWeightSpinner = (*weightControls)[selectedWeightModify];
+		glui->sync_live();
+
 		movingBar = 0;
 		selectedWeightModify = -1;
 		selectedHoverBar = -1;
@@ -1111,6 +1169,9 @@ void secondaryPassiveMotionFunction(int cx, int cy) {
 			|| (y < -0.3f && (y - 0.01f <= world[Y] && world[Y] <= -0.3f + 0.01f
 			&& x - 0.01f <= world[X] && world[X] <= x + xLen + 0.01f))) {
 			selectedHoverBar = i;
+			selectedKSpinner = i + 1;
+			selectedWeightSpinner = (*weightControls)[i];
+			glui->sync_live();
 			break;
 		}
 		x += xLen;
@@ -1140,6 +1201,10 @@ void secondaryMotionFunction(int cx, int cy) {
 
 		float newWeight = (world[Y] + 0.3f) / 0.12f;
 		(*weightControls)[selectedWeightModify] = newWeight;
+
+		selectedKSpinner = selectedWeightModify + 1;
+		selectedWeightSpinner = (*weightControls)[selectedWeightModify];
+		glui->sync_live();
 
 		forceUpdateSec = 1;
 		forceUpdateMain = 1;

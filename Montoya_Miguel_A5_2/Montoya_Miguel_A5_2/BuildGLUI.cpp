@@ -6,6 +6,9 @@
 GLUI *glui;
 GLUI_Spinner *spinnerStep;
 GLUI_Spinner *spinnerDeCastelT;
+GLUI_Spinner *spinnerKBar;
+GLUI_Spinner *spinnerKWeight;
+
 GLUI_RadioGroup *radioGroupMode;
 GLUI_Button *decreaseButton;
 extern int *segNum;
@@ -16,12 +19,16 @@ extern int *drawExtendedCurve;
 extern int *drawControlPoly;
 extern int *drawHull;
 extern int selectedCurve;
+float selectedWeightSpinner = 1.0f;
+int selectedKSpinner = 1;
 
 extern void increaseOrder();
 extern void decreaseOrder();
 extern void clearScreen();
 extern void changeCurve();
 extern void applyChanges();
+extern void updateKWeightSpinner();
+extern void updateWeightSpinner();
 
 void emptyCB(int) {
 	applyChanges();
@@ -71,6 +78,11 @@ void updateDegreeCallback(int mode) {
 	}
 }
 
+void weightCB(int c) {
+	if(c == 40) updateKWeightSpinner();
+	else if (c == 41) updateWeightSpinner();
+}
+
 void buildGLUI(int mainWindowID) {
 
 	GLUI_Master.set_glutReshapeFunc(resizeFunction);
@@ -103,7 +115,15 @@ void buildGLUI(int mainWindowID) {
 	glui->add_checkbox_to_panel(panelOptions, "Draw extended curve", drawExtendedCurve, 22, emptyCB);
 	glui->add_checkbox_to_panel(panelOptions, "Draw control polygon", drawControlPoly, 23, emptyCB);
 	glui->add_checkbox_to_panel(panelOptions, "Draw convex hull", drawHull, 24, emptyCB);
-	
+
+	GLUI_Panel *weightOptions = new GLUI_Panel(glui, "Weight Options", GLUI_PANEL_EMBOSSED);
+	spinnerKBar = glui->add_spinner_to_panel(weightOptions, "k-th bar = ", GLUI_SPINNER_INT, &selectedKSpinner, 40, weightCB);
+	spinnerKBar->set_int_limits(1, 32, GLUI_LIMIT_CLAMP);
+	spinnerKBar->disable();
+	spinnerKWeight = glui->add_spinner_to_panel(weightOptions, "k-th weight = ", GLUI_SPINNER_FLOAT, &selectedWeightSpinner, 41, weightCB);
+	spinnerKWeight->set_float_limits(-5, 10, GLUI_LIMIT_CLAMP);
+	spinnerKWeight->disable();
+
 	GLUI_Panel *panelButtons = new GLUI_Panel(glui, "", GLUI_PANEL_NONE);
 	new GLUI_Button(panelButtons, "Elevate deree", 30, updateDegreeCallback);
 	decreaseButton = new GLUI_Button(panelButtons, "Lower degree", 31, updateDegreeCallback);
